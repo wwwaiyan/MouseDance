@@ -18,14 +18,22 @@ trap cleanup EXIT
 mkdir -p "$DIST_DIR" "$PACKAGE_DIR" "$DMG_DIR"
 ditto "$SCRIPT_DIR/MouseDance.app" "$PACKAGE_DIR/MouseDance.app"
 cp "$SCRIPT_DIR/Install MouseDance.command" "$PACKAGE_DIR/Install MouseDance.command"
+cp "$SCRIPT_DIR/Uninstall MouseDance.command" "$PACKAGE_DIR/Uninstall MouseDance.command"
+cp "$SCRIPT_DIR/uninstall.sh" "$PACKAGE_DIR/uninstall.sh"
 cp "$SCRIPT_DIR/QUICK-START.txt" "$PACKAGE_DIR/QUICK-START.txt"
-chmod +x "$PACKAGE_DIR/Install MouseDance.command"
+chmod +x \
+  "$PACKAGE_DIR/Install MouseDance.command" \
+  "$PACKAGE_DIR/Uninstall MouseDance.command" \
+  "$PACKAGE_DIR/uninstall.sh"
 
 rm -f "$ARCHIVE"
 ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ARCHIVE"
 
 ditto "$SCRIPT_DIR/MouseDance.app" "$DMG_DIR/MouseDance.app"
 cp "$SCRIPT_DIR/QUICK-START.txt" "$DMG_DIR/QUICK-START.txt"
+cp "$SCRIPT_DIR/Uninstall MouseDance.command" "$DMG_DIR/Uninstall MouseDance.command"
+cp "$SCRIPT_DIR/uninstall.sh" "$DMG_DIR/uninstall.sh"
+chmod +x "$DMG_DIR/Uninstall MouseDance.command" "$DMG_DIR/uninstall.sh"
 ln -s /Applications "$DMG_DIR/Applications"
 
 rm -f "$DISK_IMAGE"

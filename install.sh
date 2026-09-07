@@ -30,12 +30,21 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Downloading MouseDance ${RELEASE}..."
-curl --fail --location --silent --show-error \
-  "$DOWNLOAD_BASE/$FILE_NAME" \
-  --output "$TEMP_DIR/$FILE_NAME"
-curl --fail --location --silent --show-error \
-  "$DOWNLOAD_BASE/$FILE_NAME.sha256" \
-  --output "$TEMP_DIR/$FILE_NAME.sha256"
+if ! curl --fail --location --silent --show-error \
+    "$DOWNLOAD_BASE/$FILE_NAME" \
+    --output "$TEMP_DIR/$FILE_NAME"; then
+  echo "No downloadable MouseDance package was found for '$RELEASE'." >&2
+  echo "Check published releases at:" >&2
+  echo "https://github.com/$REPOSITORY/releases" >&2
+  exit 1
+fi
+
+if ! curl --fail --location --silent --show-error \
+    "$DOWNLOAD_BASE/$FILE_NAME.sha256" \
+    --output "$TEMP_DIR/$FILE_NAME.sha256"; then
+  echo "The release exists, but its checksum file is missing." >&2
+  exit 1
+fi
 
 (
   cd "$TEMP_DIR"
