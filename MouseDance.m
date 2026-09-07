@@ -1,5 +1,6 @@
 #import <Cocoa/Cocoa.h>
 #import <ApplicationServices/ApplicationServices.h>
+#import <IOKit/pwr_mgt/IOPMLib.h>
 
 static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
                                       CGEventRef event, void *userInfo);
@@ -10,11 +11,16 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
 @property(nonatomic) NSTimeInterval interval;
 @property(nonatomic) BOOL enabled;
 @property(nonatomic) BOOL moveRightNext;
+@property(nonatomic) BOOL keepAwakeWhileMoving;
+@property(nonatomic) NSUInteger motionGeneration;
+@property(nonatomic) CGPoint lastAnimatedPoint;
 @property(nonatomic) BOOL independentScrollingEnabled;
 @property(nonatomic) BOOL mouseNatural;
 @property(nonatomic) BOOL trackpadNatural;
 @property(nonatomic) CFMachPortRef scrollEventTap;
 @property(nonatomic) CFRunLoopSourceRef scrollRunLoopSource;
+@property(nonatomic) IOPMAssertionID systemSleepAssertionID;
+@property(nonatomic) IOPMAssertionID displaySleepAssertionID;
 @end
 
 @implementation MouseDanceAppDelegate
@@ -27,6 +33,9 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     self.enabled = [defaults objectForKey:@"enabled"] == nil
         ? NO : [defaults boolForKey:@"enabled"];
     self.moveRightNext = YES;
+    self.keepAwakeWhileMoving =
+        [defaults objectForKey:@"keepAwakeWhileMoving"] == nil
+        ? YES : [defaults boolForKey:@"keepAwakeWhileMoving"];
     self.independentScrollingEnabled =
         [defaults objectForKey:@"independentScrollingEnabled"] == nil
         ? YES : [defaults boolForKey:@"independentScrollingEnabled"];
@@ -40,6 +49,7 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     self.statusItem.button.toolTip = @"MouseDance";
     [self rebuildMenu];
     [self scheduleTimer];
+    [self updatePowerAssertions];
     [self requestAccessibilityPermission];
     [self setupScrollEventTap];
 }
@@ -55,6 +65,7 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     [defaults setDouble:self.interval forKey:@"interval"];
     [defaults setBool:self.enabled forKey:@"enabled"];
+    [defaults setBool:self.keepAwakeWhileMoving forKey:@"keepAwakeWhileMoving"];
     [defaults setBool:self.independentScrollingEnabled
                forKey:@"independentScrollingEnabled"];
     [defaults setBool:self.mouseNatural forKey:@"mouseNatural"];
@@ -87,6 +98,14 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
         action:@selector(movePointerNow:) keyEquivalent:@""];
     testMovementItem.target = self;
     [menu addItem:testMovementItem];
+
+    NSMenuItem *keepAwakeItem = [[NSMenuItem alloc]
+        initWithTitle:@"Keep Mac awake while moving"
+        action:@selector(toggleKeepAwake:) keyEquivalent:@""];
+    keepAwakeItem.target = self;
+    keepAwakeItem.state = self.keepAwakeWhileMoving
+        ? NSControlStateValueOn : NSControlStateValueOff;
+    [menu addItem:keepAwakeItem];
     [menu addItem:NSMenuItem.separatorItem];
 
     NSMenuItem *heading = [[NSMenuItem alloc]
@@ -192,6 +211,15 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     self.enabled = !self.enabled;
     [self saveSettings];
     [self scheduleTimer];
+    [self updatePowerAssertions];
+    [self rebuildMenu];
+}
+
+- (void)toggleKeepAwake:(id)sender {
+    (void)sender;
+    self.keepAwakeWhileMoving = !self.keepAwakeWhileMoving;
+    [self saveSettings];
+    [self updatePowerAssertions];
     [self rebuildMenu];
 }
 
@@ -341,7 +369,7 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
 }
 
 - (CGFloat)horizontalOffsetForPoint:(CGPoint)point {
-    const CGFloat distance = 12;
+    const CGFloat distance = 36;
     CGFloat offset = self.moveRightNext ? distance : -distance;
     CGDirectDisplayID displays[32];
     uint32_t count = 0;
@@ -367,6 +395,11 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     }
 }
 
+- (void)moveCursorVisiblyTo:(CGPoint)point {
+    CGWarpMouseCursorPosition(point);
+    [self postMouseMove:point];
+}
+
 - (void)nudgeCursor:(NSTimer *)timer {
     (void)timer;
     CGEventRef currentEvent = CGEventCreate(NULL);
@@ -375,10 +408,74 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     CFRelease(currentEvent);
 
     CGFloat offset = [self horizontalOffsetForPoint:original];
-    CGPoint nudged = original;
-    nudged.x += offset;
-    [self postMouseMove:nudged];
     self.moveRightNext = offset < 0;
+
+    const NSUInteger steps = 15;
+    NSTimeInterval duration = MIN(0.45, MAX(0.12, self.interval * 0.6));
+    NSUInteger generation = ++self.motionGeneration;
+    self.lastAnimatedPoint = original;
+
+    for (NSUInteger step = 1; step <= steps; step++) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
+                                     (int64_t)(duration * step / steps * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            if (self.motionGeneration != generation) return;
+
+            CGEventRef latestEvent = CGEventCreate(NULL);
+            if (latestEvent == NULL) return;
+            CGPoint latest = CGEventGetLocation(latestEvent);
+            CFRelease(latestEvent);
+
+            CGFloat changeX = latest.x - self.lastAnimatedPoint.x;
+            CGFloat changeY = latest.y - self.lastAnimatedPoint.y;
+            if (step > 1 && hypot(changeX, changeY) > 4) {
+                self.motionGeneration++;
+                return;
+            }
+
+            CGFloat progress = (CGFloat)step / (CGFloat)steps;
+            CGFloat eased = progress * progress * (3 - 2 * progress);
+            CGPoint next = CGPointMake(
+                original.x + offset * eased,
+                original.y + sin(progress * M_PI) * 6
+            );
+            [self moveCursorVisiblyTo:next];
+            self.lastAnimatedPoint = next;
+        });
+    }
+}
+
+- (void)updatePowerAssertions {
+    BOOL shouldPreventSleep = self.enabled && self.keepAwakeWhileMoving;
+
+    if (shouldPreventSleep) {
+        if (self.systemSleepAssertionID == kIOPMNullAssertionID) {
+            IOPMAssertionCreateWithName(
+                kIOPMAssertionTypePreventUserIdleSystemSleep,
+                kIOPMAssertionLevelOn,
+                CFSTR("MouseDance automatic movement is enabled"),
+                &_systemSleepAssertionID
+            );
+        }
+        if (self.displaySleepAssertionID == kIOPMNullAssertionID) {
+            IOPMAssertionCreateWithName(
+                kIOPMAssertionTypePreventUserIdleDisplaySleep,
+                kIOPMAssertionLevelOn,
+                CFSTR("MouseDance automatic movement is enabled"),
+                &_displaySleepAssertionID
+            );
+        }
+        return;
+    }
+
+    if (self.systemSleepAssertionID != kIOPMNullAssertionID) {
+        IOPMAssertionRelease(self.systemSleepAssertionID);
+        self.systemSleepAssertionID = kIOPMNullAssertionID;
+    }
+    if (self.displaySleepAssertionID != kIOPMNullAssertionID) {
+        IOPMAssertionRelease(self.displaySleepAssertionID);
+        self.displaySleepAssertionID = kIOPMNullAssertionID;
+    }
 }
 
 - (void)showAbout:(id)sender {
@@ -390,6 +487,8 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
         @"MouseDance gently moves the pointer to keep your Mac active and "
          "allows separate mouse and trackpad scroll directions.\n\n"
          "Current interval: %@ seconds\n\n"
+         "When automatic movement is enabled, MouseDance can also prevent "
+         "idle display and system sleep.\n\n"
          "macOS may require permission in System Settings → "
          "Privacy & Security → Accessibility.", self.formattedInterval];
     [alert addButtonWithTitle:@"OK"];
@@ -398,6 +497,8 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
     (void)notification;
+    self.enabled = NO;
+    [self updatePowerAssertions];
     if (self.scrollRunLoopSource != NULL) {
         CFRunLoopRemoveSource(CFRunLoopGetMain(), self.scrollRunLoopSource,
                               kCFRunLoopCommonModes);

@@ -12,8 +12,8 @@ portable ZIP is available from the workflow run's **Artifacts** section.
 3. Create and push a tag that exactly matches the public version:
 
    ```sh
-   git tag -a v2.3.0 -m "MouseDance 2.3.0"
-   git push origin v2.3.0
+   git tag -a v2.4.0 -m "MouseDance 2.4.0"
+   git push origin v2.4.0
    ```
 
 The **Release** workflow then builds and verifies the universal macOS app,

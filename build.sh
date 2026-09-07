@@ -24,6 +24,7 @@ clang -O2 \
   -fmodules-cache-path="$MODULE_CACHE" \
   -framework Cocoa \
   -framework ApplicationServices \
+  -framework IOKit \
   "$SOURCE" \
   -o "$OUTPUT"
 
