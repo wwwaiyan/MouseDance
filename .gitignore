@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Local build output
+.build/
+MouseDance.app/
+dist/
+mousedance
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*~
