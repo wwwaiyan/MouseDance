@@ -33,6 +33,10 @@ STOP OR QUIT
 Click the mouse icon. Uncheck "Move pointer automatically" to stop movement,
 or choose Quit MouseDance to close the whole app.
 
+UNINSTALL
+Choose "Uninstall MouseDance" from the mouse menu, or double-click
+"Uninstall MouseDance.command". The app is moved to Trash so it is recoverable.
+
 FIRST-LAUNCH PERMISSION
 If macOS asks, allow MouseDance in:
 System Settings > Privacy & Security > Accessibility

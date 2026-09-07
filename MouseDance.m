@@ -130,6 +130,12 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     aboutItem.target = self;
     [menu addItem:aboutItem];
 
+    NSMenuItem *uninstallItem = [[NSMenuItem alloc]
+        initWithTitle:@"Uninstall MouseDance…"
+        action:@selector(uninstall:) keyEquivalent:@""];
+    uninstallItem.target = self;
+    [menu addItem:uninstallItem];
+
     NSMenuItem *quitItem = [[NSMenuItem alloc]
         initWithTitle:@"Quit MouseDance" action:@selector(quit:) keyEquivalent:@"q"];
     quitItem.target = self;
@@ -387,6 +393,44 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
 - (void)quit:(id)sender {
     (void)sender;
     [NSApp terminate:nil];
+}
+
+- (void)uninstall:(id)sender {
+    (void)sender;
+    [NSApp activateIgnoringOtherApps:YES];
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.alertStyle = NSAlertStyleWarning;
+    alert.messageText = @"Uninstall MouseDance?";
+    alert.informativeText = @"The app will be moved to Trash and then closed.";
+    [alert addButtonWithTitle:@"Uninstall"];
+    [alert addButtonWithTitle:@"Cancel"];
+    alert.showsSuppressionButton = YES;
+    alert.suppressionButton.title = @"Also remove saved settings";
+
+    if ([alert runModal] != NSAlertFirstButtonReturn) return;
+
+    if (alert.suppressionButton.state == NSControlStateValueOn) {
+        [NSUserDefaults.standardUserDefaults
+            removePersistentDomainForName:@"com.mousedance.app"];
+    }
+
+    NSURL *appURL = NSBundle.mainBundle.bundleURL;
+    [NSWorkspace.sharedWorkspace recycleURLs:@[appURL]
+        completionHandler:^(NSDictionary<NSURL *, NSURL *> *newURLs,
+                            NSError *error) {
+        (void)newURLs;
+        if (error != nil) {
+            NSAlert *failure = [[NSAlert alloc] init];
+            failure.alertStyle = NSAlertStyleCritical;
+            failure.messageText = @"Could not uninstall MouseDance";
+            failure.informativeText = error.localizedDescription;
+            [failure addButtonWithTitle:@"OK"];
+            [failure runModal];
+            return;
+        }
+        [NSApp terminate:nil];
+    }];
 }
 
 @end

@@ -43,6 +43,7 @@ The mouse icon in the macOS menu bar opens the controls:
 - Keep **Independent scrolling** enabled to control both devices separately.
 - Set **Mouse wheel direction** to Natural or Standard.
 - Set **Trackpad direction** to Natural or Standard.
+- Choose **Uninstall MouseDance…** to move the app to Trash.
 - Choose **Quit MouseDance** to exit.
 
 Independent scrolling defaults to **Standard** for a mouse wheel and **Natural**
@@ -53,6 +54,25 @@ Independent scrolling works even when automatic pointer movement is disabled.
 Settings are remembered between launches. macOS may ask for Accessibility
 permission because MouseDance moves the pointer. Enable it in **System Settings
 > Privacy & Security > Accessibility**.
+
+## Uninstall
+
+Choose **Uninstall MouseDance…** from the mouse menu, or double-click
+`Uninstall MouseDance.command` in the downloaded package.
+
+Terminal users can uninstall with one line:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/wwwaiyan/MouseDance/main/uninstall.sh | bash
+```
+
+That command preserves saved settings. To remove the app and its settings:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/wwwaiyan/MouseDance/main/uninstall.sh | bash -s -- --purge
+```
+
+The app is moved to Trash rather than permanently deleted.
 
 ## Build from source
 
@@ -69,7 +89,7 @@ Developers can run:
 ## GitHub builds and releases
 
 GitHub Actions packages the app on pushes to `main`, pull requests, and manual
-workflow runs. Pushing a version tag such as `v2.1.0` creates a GitHub Release
+workflow runs. Pushing a version tag such as `v2.2.0` creates a GitHub Release
 containing the portable ZIP, DMG, and their SHA-256 checksums. See
 [`RELEASING.md`](RELEASING.md) for the release steps.
 
