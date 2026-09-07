@@ -1,27 +1,81 @@
-# MouseDance
+# MouseDance for macOS
 
-A tiny native macOS utility that nudges the mouse pointer by one pixel every
-three seconds and immediately puts it back.
+MouseDance is a tiny menu-bar app that gently nudges the pointer to keep the Mac
+active. It also provides separate scroll directions for a mouse and trackpad.
+It has no third-party dependencies and does not need Git.
 
-## Run it
+## Easiest option for regular users
 
-Double-click `MouseDance.command` in Finder. Keep the Terminal window open while
-it runs. Press **Control-C** in that window to stop it.
+### DMG installer
 
-On first launch, macOS may ask for permission. Enable your terminal application
-under **System Settings > Privacy & Security > Accessibility**, then launch
-`MouseDance.command` again.
+Download `MouseDance-macOS.dmg`, open it, and drag **MouseDance** onto the
+**Applications** shortcut. This is the most familiar installation method.
 
-You can also run it from Terminal:
+### One-line install
+
+Paste this into Terminal to download the latest release, verify its checksum,
+install it for the current user, and start it:
 
 ```sh
-./MouseDance.command
+curl -fsSL https://raw.githubusercontent.com/wwwaiyan/MouseDance/main/install.sh | bash
 ```
 
-The first launch compiles the small native program. Later launches reuse the
-compiled binary unless the source changed. No third-party dependencies are
-required; if the compiler is missing, install Apple's Command Line Tools
-with `xcode-select --install`.
+This installs to `~/Applications`, so it does not need an administrator password.
 
-MouseDance keeps the computer receiving pointer activity, but Microsoft Teams
-ultimately controls how presence is calculated, so its status is not guaranteed.
+### Portable ZIP
+
+Download and unzip `MouseDance-macOS-portable.zip`, then either:
+
+- Double-click `MouseDance.app` to run it portably from any folder.
+- Double-click `Install MouseDance.command` to copy it to `~/Applications` and
+  start it.
+
+The app is not notarized. On first launch, if macOS blocks it, Control-click
+`MouseDance.app`, choose **Open**, then choose **Open** again.
+
+## Use the app
+
+The mouse icon in the macOS menu bar opens the controls:
+
+- Turn **Move pointer automatically** on or off. It is off by default.
+- Choose 3, 5, 10, 30, or 60 seconds.
+- Choose **Custom…** for any interval from 0.2 to 3600 seconds.
+- Keep **Independent scrolling** enabled to control both devices separately.
+- Set **Mouse wheel direction** to Natural or Standard.
+- Set **Trackpad direction** to Natural or Standard.
+- Choose **Quit MouseDance** to exit.
+
+Independent scrolling defaults to **Standard** for a mouse wheel and **Natural**
+for a trackpad. MouseDance automatically compensates for the current macOS
+Natural Scrolling value, so users do not have to change that system setting.
+Independent scrolling works even when automatic pointer movement is disabled.
+
+Settings are remembered between launches. macOS may ask for Accessibility
+permission because MouseDance moves the pointer. Enable it in **System Settings
+> Privacy & Security > Accessibility**.
+
+## Build from source
+
+Developers can run:
+
+```sh
+./build.sh
+./package.sh
+```
+
+`build.sh` creates a universal `MouseDance.app` for Apple Silicon and Intel Macs.
+`package.sh` creates the shareable ZIP and drag-to-Applications DMG under `dist/`.
+
+## GitHub builds and releases
+
+GitHub Actions packages the app on pushes to `main`, pull requests, and manual
+workflow runs. Pushing a version tag such as `v2.1.0` creates a GitHub Release
+containing the portable ZIP, DMG, and their SHA-256 checksums. See
+[`RELEASING.md`](RELEASING.md) for the release steps.
+
+MouseDance distinguishes ordinary mouse wheels from trackpads using macOS's
+continuous-scrolling event flag. Some smooth-scrolling mice, including some
+third-party drivers and Magic Mouse behavior, may appear trackpad-like to macOS.
+
+Microsoft Teams ultimately controls its own presence calculation, so a green
+status is not guaranteed.

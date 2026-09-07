@@ -1,0 +1,41 @@
+MOUSEDANCE — QUICK START
+========================
+
+DMG INSTALL
+1. Open MouseDance-macOS.dmg.
+2. Drag MouseDance onto the Applications shortcut.
+3. Open MouseDance from Applications.
+
+PORTABLE (no installation)
+1. Double-click MouseDance.app.
+2. Look for the mouse icon in the menu bar.
+
+INSTALL FOR THIS USER
+1. Double-click "Install MouseDance.command".
+2. MouseDance is copied to your Applications folder and started.
+
+CHANGE THE INTERVAL
+Automatic pointer movement is OFF by default.
+Click the mouse icon and check "Move pointer automatically" to enable it.
+Click the mouse icon in the menu bar and choose 3, 5, 10, 30, or 60 seconds.
+Choose Custom for any value from 0.2 to 3600 seconds.
+
+SEPARATE MOUSE AND TRACKPAD SCROLLING
+Click the mouse icon and keep "Independent scrolling" checked.
+Choose the direction separately under:
+- Mouse wheel direction
+- Trackpad direction
+
+The defaults are Standard for the mouse wheel and Natural for the trackpad.
+You do not need to change the macOS Natural Scrolling setting.
+
+STOP OR QUIT
+Click the mouse icon. Uncheck "Move pointer automatically" to stop movement,
+or choose Quit MouseDance to close the whole app.
+
+FIRST-LAUNCH PERMISSION
+If macOS asks, allow MouseDance in:
+System Settings > Privacy & Security > Accessibility
+
+If macOS says the app cannot be opened because it is from an unidentified
+developer, Control-click MouseDance.app, choose Open, then click Open again.

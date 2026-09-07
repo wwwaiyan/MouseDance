@@ -1,0 +1,46 @@
+name: Package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build universal macOS package
+    runs-on: macos-14
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build portable package
+        run: ./package.sh
+
+      - name: Verify application
+        run: |
+          codesign --verify --deep --strict MouseDance.app
+          file MouseDance.app/Contents/MacOS/MouseDance | grep 'universal binary'
+          unzip -t dist/MouseDance-macOS-portable.zip
+          hdiutil verify dist/MouseDance-macOS.dmg
+
+      - name: Create checksum
+        run: |
+          cd dist
+          shasum -a 256 MouseDance-macOS-portable.zip > MouseDance-macOS-portable.zip.sha256
+          shasum -a 256 MouseDance-macOS.dmg > MouseDance-macOS.dmg.sha256
+
+      - name: Upload portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: MouseDance-macOS-portable
+          path: |
+            dist/MouseDance-macOS-portable.zip
+            dist/MouseDance-macOS-portable.zip.sha256
+            dist/MouseDance-macOS.dmg
+            dist/MouseDance-macOS.dmg.sha256
+          if-no-files-found: error
