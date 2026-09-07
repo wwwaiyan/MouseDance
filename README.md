@@ -38,6 +38,7 @@ The app is not notarized. On first launch, if macOS blocks it, Control-click
 The mouse icon in the macOS menu bar opens the controls:
 
 - Turn **Move pointer automatically** on or off. It is off by default.
+- Choose **Move pointer now** to test it immediately.
 - Choose 3, 5, 10, 30, or 60 seconds.
 - Choose **Custom…** for any interval from 0.2 to 3600 seconds.
 - Keep **Independent scrolling** enabled to control both devices separately.
@@ -50,6 +51,9 @@ Independent scrolling defaults to **Standard** for a mouse wheel and **Natural**
 for a trackpad. MouseDance automatically compensates for the current macOS
 Natural Scrolling value, so users do not have to change that system setting.
 Independent scrolling works even when automatic pointer movement is disabled.
+
+When enabled, the pointer visibly moves 12 pixels and alternates left and right.
+It no longer snaps back immediately, making each movement easy to see.
 
 Settings are remembered between launches. macOS may ask for Accessibility
 permission because MouseDance moves the pointer. Enable it in **System Settings
@@ -89,7 +93,7 @@ Developers can run:
 ## GitHub builds and releases
 
 GitHub Actions packages the app on pushes to `main`, pull requests, and manual
-workflow runs. Pushing a version tag such as `v2.2.0` creates a GitHub Release
+workflow runs. Pushing a version tag such as `v2.3.0` creates a GitHub Release
 containing the portable ZIP, DMG, and their SHA-256 checksums. See
 [`RELEASING.md`](RELEASING.md) for the release steps.
 

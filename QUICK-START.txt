@@ -17,8 +17,11 @@ INSTALL FOR THIS USER
 CHANGE THE INTERVAL
 Automatic pointer movement is OFF by default.
 Click the mouse icon and check "Move pointer automatically" to enable it.
+Choose "Move pointer now" to test the visible movement immediately.
 Click the mouse icon in the menu bar and choose 3, 5, 10, 30, or 60 seconds.
 Choose Custom for any value from 0.2 to 3600 seconds.
+
+The pointer moves 12 pixels, alternating left and right, so it is easy to see.
 
 SEPARATE MOUSE AND TRACKPAD SCROLLING
 Click the mouse icon and keep "Independent scrolling" checked.

@@ -9,6 +9,7 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
 @property(nonatomic, strong) NSTimer *timer;
 @property(nonatomic) NSTimeInterval interval;
 @property(nonatomic) BOOL enabled;
+@property(nonatomic) BOOL moveRightNext;
 @property(nonatomic) BOOL independentScrollingEnabled;
 @property(nonatomic) BOOL mouseNatural;
 @property(nonatomic) BOOL trackpadNatural;
@@ -25,6 +26,7 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     if (self.interval < 0.2) self.interval = 3.0;
     self.enabled = [defaults objectForKey:@"enabled"] == nil
         ? NO : [defaults boolForKey:@"enabled"];
+    self.moveRightNext = YES;
     self.independentScrollingEnabled =
         [defaults objectForKey:@"independentScrollingEnabled"] == nil
         ? YES : [defaults boolForKey:@"independentScrollingEnabled"];
@@ -79,6 +81,12 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     activeItem.target = self;
     activeItem.state = self.enabled ? NSControlStateValueOn : NSControlStateValueOff;
     [menu addItem:activeItem];
+
+    NSMenuItem *testMovementItem = [[NSMenuItem alloc]
+        initWithTitle:@"Move pointer now"
+        action:@selector(movePointerNow:) keyEquivalent:@""];
+    testMovementItem.target = self;
+    [menu addItem:testMovementItem];
     [menu addItem:NSMenuItem.separatorItem];
 
     NSMenuItem *heading = [[NSMenuItem alloc]
@@ -185,6 +193,23 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     [self saveSettings];
     [self scheduleTimer];
     [self rebuildMenu];
+}
+
+- (void)movePointerNow:(id)sender {
+    (void)sender;
+    if (!AXIsProcessTrusted()) {
+        [self requestAccessibilityPermission];
+        [NSApp activateIgnoringOtherApps:YES];
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.alertStyle = NSAlertStyleWarning;
+        alert.messageText = @"Accessibility permission required";
+        alert.informativeText = @"Enable MouseDance in System Settings → "
+            "Privacy & Security → Accessibility, then try again.";
+        [alert addButtonWithTitle:@"OK"];
+        [alert runModal];
+        return;
+    }
+    [self nudgeCursor:nil];
 }
 
 - (void)selectInterval:(NSMenuItem *)sender {
@@ -316,17 +341,21 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
 }
 
 - (CGFloat)horizontalOffsetForPoint:(CGPoint)point {
+    const CGFloat distance = 12;
+    CGFloat offset = self.moveRightNext ? distance : -distance;
     CGDirectDisplayID displays[32];
     uint32_t count = 0;
     if (CGGetActiveDisplayList(32, displays, &count) == kCGErrorSuccess) {
         for (uint32_t index = 0; index < count; index++) {
             CGRect bounds = CGDisplayBounds(displays[index]);
             if (CGRectContainsPoint(bounds, point)) {
-                return point.x + 1 < CGRectGetMaxX(bounds) ? 1 : -1;
+                if (point.x + offset >= CGRectGetMaxX(bounds)) return -distance;
+                if (point.x + offset < CGRectGetMinX(bounds)) return distance;
+                return offset;
             }
         }
     }
-    return 1;
+    return offset;
 }
 
 - (void)postMouseMove:(CGPoint)point {
@@ -345,20 +374,11 @@ static CGEventRef scrollEventCallback(CGEventTapProxy proxy, CGEventType type,
     CGPoint original = CGEventGetLocation(currentEvent);
     CFRelease(currentEvent);
 
+    CGFloat offset = [self horizontalOffsetForPoint:original];
     CGPoint nudged = original;
-    nudged.x += [self horizontalOffsetForPoint:original];
+    nudged.x += offset;
     [self postMouseMove:nudged];
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 80000000LL),
-                   dispatch_get_main_queue(), ^{
-        CGEventRef latestEvent = CGEventCreate(NULL);
-        if (latestEvent == NULL) return;
-        CGPoint latest = CGEventGetLocation(latestEvent);
-        CFRelease(latestEvent);
-        if (fabs(latest.x - nudged.x) < 0.1 && fabs(latest.y - nudged.y) < 0.1) {
-            [self postMouseMove:original];
-        }
-    });
+    self.moveRightNext = offset < 0;
 }
 
 - (void)showAbout:(id)sender {
