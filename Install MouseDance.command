@@ -13,6 +13,12 @@ if [[ ! -d "$SOURCE_APP" ]]; then
   exit 1
 fi
 
+if pgrep -x MouseDance >/dev/null 2>&1; then
+  print "Stopping the currently running MouseDance version..."
+  pkill -x MouseDance >/dev/null 2>&1 || true
+  sleep 1
+fi
+
 mkdir -p "$INSTALL_DIR"
 
 if [[ -d "$INSTALLED_APP" ]]; then

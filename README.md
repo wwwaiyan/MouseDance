@@ -21,6 +21,8 @@ curl -fsSL https://raw.githubusercontent.com/wwwaiyan/MouseDance/main/install.sh
 ```
 
 This installs to `~/Applications`, so it does not need an administrator password.
+When upgrading, the installer stops the running older version before replacing
+and relaunching it.
 
 ### Portable ZIP
 
@@ -39,6 +41,8 @@ The mouse icon in the macOS menu bar opens the controls:
 
 - Turn **Move pointer automatically** on or off. It is off by default.
 - Choose **Move pointer now** to test it immediately.
+- Keep **Keep Mac awake while moving** checked to prevent idle display and
+  system sleep whenever automatic movement is enabled.
 - Choose 3, 5, 10, 30, or 60 seconds.
 - Choose **Custom…** for any interval from 0.2 to 3600 seconds.
 - Keep **Independent scrolling** enabled to control both devices separately.
@@ -52,8 +56,14 @@ for a trackpad. MouseDance automatically compensates for the current macOS
 Natural Scrolling value, so users do not have to change that system setting.
 Independent scrolling works even when automatic pointer movement is disabled.
 
-When enabled, the pointer visibly moves 12 pixels and alternates left and right.
-It no longer snaps back immediately, making each movement easy to see.
+When enabled, the pointer follows a visible, smooth arc across 36 pixels and
+alternates left and right. If the user starts moving the pointer during the
+animation, MouseDance cancels that animation instead of fighting for control.
+
+The keep-awake option uses macOS power assertions. It prevents normal idle
+display and system sleep while automatic movement is running, but it cannot
+override closing the MacBook lid, manually locking the Mac, low-battery safety
+behavior, or organization-managed security policies.
 
 Settings are remembered between launches. macOS may ask for Accessibility
 permission because MouseDance moves the pointer. Enable it in **System Settings
@@ -93,7 +103,7 @@ Developers can run:
 ## GitHub builds and releases
 
 GitHub Actions packages the app on pushes to `main`, pull requests, and manual
-workflow runs. Pushing a version tag such as `v2.3.0` creates a GitHub Release
+workflow runs. Pushing a version tag such as `v2.4.0` creates a GitHub Release
 containing the portable ZIP, DMG, and their SHA-256 checksums. See
 [`RELEASING.md`](RELEASING.md) for the release steps.
 

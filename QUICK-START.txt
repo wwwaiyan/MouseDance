@@ -21,7 +21,13 @@ Choose "Move pointer now" to test the visible movement immediately.
 Click the mouse icon in the menu bar and choose 3, 5, 10, 30, or 60 seconds.
 Choose Custom for any value from 0.2 to 3600 seconds.
 
-The pointer moves 12 pixels, alternating left and right, so it is easy to see.
+The pointer moves smoothly across 36 pixels, alternating left and right, so it
+is easy to see. If you move the pointer yourself, the animation stops.
+
+KEEP THE MAC AWAKE
+Keep "Keep Mac awake while moving" checked. While automatic movement is on,
+MouseDance prevents normal idle display sleep and system sleep. It cannot
+override closing the lid, manually locking, or company security policies.
 
 SEPARATE MOUSE AND TRACKPAD SCROLLING
 Click the mouse icon and keep "Independent scrolling" checked.
